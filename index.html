@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Circle Board Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="main-header">
+  <div class="logo-container">
+    <img src="logo.svg" alt="Circle Board" class="header-logo">
+  </div>
+  <button class="rule-btn" onclick="openRuleModal()">RULE</button>
+</header>
+
+<main class="app-container">
+  <div id="auth" class="auth-overlay">
+    <div class="auth-card">
+      <h2>Circle Board</h2>
+      <p>合言葉を入力して入室してください</p>
+      <input id="passInput" type="password" placeholder="Passcode">
+      <button onclick="login()" class="primary-btn">入室</button>
+    </div>
+  </div>
+
+  <div id="app" class="app-layout" style="display:none;">
+    
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="label">BOARDS</span>
+        <button onclick="toggleBoardForm()" class="add-btn" id="addBoardToggle">+</button>
+      </div>
+
+      <div id="newBoardForm" class="board-create-box">
+        <input id="newBoardTitle" placeholder="ボード名を入力...">
+        <button onclick="createNewBoard()" class="create-confirm-btn">作成</button>
+      </div>
+
+      <nav id="boardList" class="board-nav">
+        </nav>
+    </aside>
+
+    <section class="chat-view">
+      <div class="chat-top-bar">
+        <h2 id="currentBoardTitle">ボードを選択</h2>
+      </div>
+
+      <div id="messages" class="message-scroller">
+        <div class="loading-msg">読み込み中...</div>
+      </div>
+
+      <div class="chat-controls">
+        <div class="user-profile-bar">
+          <div class="nick-input-group">
+            <span class="user-icon">👤</span>
+            <input id="nickname" placeholder="ニックネーム" maxlength="15">
+          </div>
+        </div>
+        <div class="text-input-group">
+          <textarea id="content" placeholder="メッセージを入力..." rows="1"></textarea>
+          <button onclick="send()" id="sendBtn" class="icon-send-btn">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<div id="ruleModal" class="rule-modal">
+  <div class="rule-content">
+    <div class="rule-header">
+      <h2>掲示板ルール</h2>
+      <span class="rule-close" onclick="closeRuleModal()">×</span>
+    </div>
+
+    <div class="rule-body">
+      <ol>
+        <li>誹謗中傷は禁止です。</li>
+        <li>個人情報の投稿は禁止です。</li>
+        <li>宣伝・勧誘行為は禁止です。</li>
+        <li>荒らし行為は禁止です。</li>
+        <li>運営の判断で投稿を削除する場合があります。</li>
+        <li>楽しく、節度を持って利用してください。</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
