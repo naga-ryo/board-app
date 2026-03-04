@@ -6,6 +6,7 @@ const client = window.supabase.createClient(
 let pass = localStorage.getItem("circlePass");
 let currentBoardId = null;
 let currentChannel = null;
+let boardsChannel = null;
 
 if (pass) init();
 
@@ -35,6 +36,30 @@ async function init() {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") send();
   });
 
+  setupBoardsRealtime();
+
+}
+
+function setupBoardsRealtime() {
+  if (boardsChannel) {
+    client.removeChannel(boardsChannel);
+  }
+
+  boardsChannel = client
+    .channel("boards-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "boards"
+      },
+      payload => {
+        console.log("boards changed:", payload);
+        loadBoards();
+      }
+    )
+    .subscribe();
 }
 
 async function loadBoards() {
@@ -216,19 +241,6 @@ async function createNewBoard() {
     await loadBoards();
     selectBoard(data, title);
   }
-}
-
-function setupRealtime() {
-  client
-    .channel("any")
-    .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, payload => {
-      const bId = payload.new ? payload.new.board_id : (payload.old ? payload.old.board_id : null);
-      if (bId === currentBoardId) loadMessages();
-    })
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "boards" }, () => {
-      loadBoards();
-    })
-    .subscribe();
 }
 
 function escapeHtml(str) {
