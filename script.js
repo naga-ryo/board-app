@@ -10,17 +10,40 @@ let boardsChannel = null;
 
 if (pass) init();
 
+// テキストエリアの自動リサイズを設定
+function setupTextareaAutoResize() {
+  const textarea = document.getElementById("content");
+  textarea.addEventListener("input", function() {
+    this.style.height = "auto";
+    this.style.height = (this.scrollHeight) + "px";
+  });
+}
+
 async function login() {
   const input = document.getElementById("passInput");
+  const authCard = document.getElementById("authCard");
+  const errorMsg = document.getElementById("authError");
+  
   pass = input.value;
   const { data, error } = await client.rpc("verify_pass", { input_pass: pass });
+  
   if (data) {
     localStorage.setItem("Pass", pass);
+    errorMsg.style.display = "none";
     init();
   } else {
-    alert("合言葉が違います");
+    // エラー時のシェイクアニメーションと赤文字表示
+    errorMsg.style.display = "block";
+    authCard.classList.remove("shake");
+    void authCard.offsetWidth; // アニメーションのリセット用ハック
+    authCard.classList.add("shake");
   }
 }
+
+// Enterキーでのログインをサポート
+document.getElementById("passInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") login();
+});
 
 async function init() {
   document.getElementById("auth").style.display = "none";
@@ -29,15 +52,19 @@ async function init() {
   const savedName = localStorage.getItem("Nickname");
   if (savedName) document.getElementById("nickname").value = savedName;
 
+  setupTextareaAutoResize();
+
   await loadBoards();
 
   // ショートカット送信
   document.getElementById("content").addEventListener("keydown", (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") send();
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault(); // 改行を防ぐ
+      send();
+    }
   });
 
   setupBoardsRealtime();
-
 }
 
 function setupBoardsRealtime() {
@@ -49,13 +76,8 @@ function setupBoardsRealtime() {
     .channel("boards-realtime")
     .on(
       "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "boards"
-      },
+      { event: "*", schema: "public", table: "boards" },
       payload => {
-        console.log("boards changed:", payload);
         loadBoards();
       }
     )
@@ -92,7 +114,6 @@ function selectBoard(id, title) {
 
   loadMessages();
 
-  // ★ここが重要
   if (currentChannel) {
     client.removeChannel(currentChannel);
   }
@@ -101,12 +122,7 @@ function selectBoard(id, title) {
     .channel("messages-" + id)
     .on(
       "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `board_id=eq.${id}`
-      },
+      { event: "INSERT", schema: "public", table: "messages", filter: `board_id=eq.${id}` },
       payload => {
         appendRealtimeMessage(payload.new);
       }
@@ -114,24 +130,28 @@ function selectBoard(id, title) {
     .subscribe();
 }
 
-function appendRealtimeMessage(m) {
-  const div = document.getElementById("messages");
-
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "message";
-
-const date = new Date(m.created_at);
-
-  // 9時間加算
+// 時刻フォーマット関数（使い回し用）
+function formatJSTDate(dateStr) {
+  const date = new Date(dateStr);
   date.setHours(date.getHours() + 9);
-
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}/${month}/${day} ${hours}:${minutes}`;
+}
 
-  const timeStr = `${year}/${month}/${day} ${hours}:${minutes}`;
+function appendRealtimeMessage(m) {
+  const div = document.getElementById("messages");
+  
+  // 空状態の表示があれば消す
+  const emptyState = div.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "message";
+  const timeStr = formatJSTDate(m.created_at);
 
   msgDiv.innerHTML = `
     <div class="message-meta">
@@ -144,37 +164,42 @@ const date = new Date(m.created_at);
   `;
 
   div.appendChild(msgDiv);
-  div.scrollTop = div.scrollHeight;
+  // スムーズスクロールで一番下へ
+  div.scrollTo({ top: div.scrollHeight, behavior: 'smooth' });
 }
 
 async function loadMessages() {
   if (!currentBoardId) return;
   const div = document.getElementById("messages");
+  div.innerHTML = `<div class="loading-msg" style="text-align:center; color:#999; margin-top:20px;">読み込み中...</div>`;
 
   const { data, error } = await client.rpc("get_messages", {
     input_pass: pass,
     input_board: currentBoardId
   });
 
-  if (error) return;
+  if (error) {
+    div.innerHTML = `<div style="text-align:center; color:red; margin-top:20px;">読み込みエラーが発生しました。</div>`;
+    return;
+  }
 
   div.innerHTML = "";
+  
+  // メッセージが0件の場合の専用UI
+  if (data.length === 0) {
+    div.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">💬</div>
+        <p>まだメッセージがありません。<br>最初のメッセージを送りましょう！</p>
+      </div>
+    `;
+    return;
+  }
+
   data.forEach(m => {
     const msgDiv = document.createElement("div");
     msgDiv.className = "message";
-    
-    const date = new Date(m.created_at);
-
-    // 9時間加算
-    date.setHours(date.getHours() + 9);
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    const timeStr = `${year}/${month}/${day} ${hours}:${minutes}`;
+    const timeStr = formatJSTDate(m.created_at);
 
     msgDiv.innerHTML = `
       <div class="message-meta">
@@ -188,7 +213,7 @@ async function loadMessages() {
     div.appendChild(msgDiv);
   });
   
-  // 最新位置へスクロール
+  // 初期ロード時はアニメーションなしで即座に一番下へ
   div.scrollTop = div.scrollHeight;
 }
 
@@ -211,18 +236,26 @@ async function send() {
 
   if (!error) {
     contentInput.value = "";
+    // 送信完了時にテキストエリアの高さをリセット
+    contentInput.style.height = "auto";
     localStorage.setItem("Nickname", nickname);
   }
   btn.disabled = false;
+  contentInput.focus(); // 送信後もフォーカスを維持して連続投稿しやすくする
 }
 
-// フォーム表示切替
 function toggleBoardForm() {
   const f = document.getElementById("newBoardForm");
   const btn = document.getElementById("addBoardToggle");
   const isShow = f.style.display === "block";
   f.style.display = isShow ? "none" : "block";
-  btn.textContent = isShow ? "+" : "×";
+  // ボタンのアニメーション効果
+  btn.style.transform = isShow ? "rotate(0deg)" : "rotate(45deg)";
+  btn.textContent = "+";
+  
+  if (!isShow) {
+    document.getElementById("newBoardTitle").focus();
+  }
 }
 
 async function createNewBoard() {

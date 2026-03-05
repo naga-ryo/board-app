@@ -12,26 +12,17 @@
 <header class="main-header">
   <div class="logo-container">
     <svg width="320" height="80" viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg" class="header-logo">
-
       <defs>
         <linearGradient id="gradPurple" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#6E4CFF"/>
           <stop offset="100%" stop-color="#5D3FD3"/>
         </linearGradient>
       </defs>
-
-      <!-- 吹き出し背景 -->
       <rect x="10" y="15" rx="16" ry="16" width="60" height="45" fill="url(#gradPurple)"/>
-
-      <!-- 吹き出ししっぽ -->
       <polygon points="35,60 48,60 36,70" fill="#5D3FD3"/>
-
-      <!-- メッセージライン -->
       <rect x="22" y="28" width="36" height="5" rx="2.5" fill="white"/>
       <rect x="22" y="38" width="28" height="5" rx="2.5" fill="white"/>
       <rect x="22" y="48" width="18" height="5" rx="2.5" fill="white"/>
-
-      <!-- テキスト -->
       <text x="90" y="48"
             font-family="Segoe UI, Helvetica, Arial, sans-serif"
             font-size="28"
@@ -39,7 +30,6 @@
             fill="#5D3FD3">
         Free Board
       </text>
-
     </svg>
   </div>
   <button class="rule-btn" onclick="openRuleModal()">RULE</button>
@@ -47,10 +37,11 @@
 
 <main class="app-container">
   <div id="auth" class="auth-overlay">
-    <div class="auth-card">
+    <div class="auth-card" id="authCard">
       <h2>Free Board</h2>
       <p>合言葉を入力して入室してください</p>
       <input id="passInput" type="password" placeholder="Passcode">
+      <p id="authError" class="auth-error-msg">合言葉が違います</p>
       <button onclick="login()" class="primary-btn">入室</button>
     </div>
   </div>
@@ -64,8 +55,10 @@
       </div>
 
       <div id="newBoardForm" class="board-create-box">
-        <input id="newBoardTitle" placeholder="ボード名を入力...">
-        <button onclick="createNewBoard()" class="create-confirm-btn">作成</button>
+        <div class="form-row">
+          <input id="newBoardTitle" placeholder="ボード名を入力...">
+          <button onclick="createNewBoard()" class="create-confirm-btn">作成</button>
+        </div>
       </div>
 
       <nav id="boardList" class="board-nav">
@@ -98,13 +91,13 @@
     </section>
   </div>
 </main>
+
 <div id="ruleModal" class="rule-modal">
   <div class="rule-content">
     <div class="rule-header">
       <h2>掲示板ルール</h2>
       <span class="rule-close" onclick="closeRuleModal()">×</span>
     </div>
-
     <div class="rule-body">
       <ol>
         <li>誹謗中傷は禁止です。</li>
