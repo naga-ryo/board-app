@@ -3,7 +3,7 @@ const client = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0ZXd5bnd6YnJqcXB6bGVqd2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDM0MTYsImV4cCI6MjA4ODExOTQxNn0.yFnUBwdlJBN8gOoRCkg-pyP0XJwsfDGrgxEVYE6ML9E"
 );
 
-let pass = localStorage.getItem("circlePass");
+let pass = localStorage.getItem("Pass");
 let currentBoardId = null;
 let currentChannel = null;
 let boardsChannel = null;
@@ -15,7 +15,7 @@ async function login() {
   pass = input.value;
   const { data, error } = await client.rpc("verify_pass", { input_pass: pass });
   if (data) {
-    localStorage.setItem("circlePass", pass);
+    localStorage.setItem("Pass", pass);
     init();
   } else {
     alert("合言葉が違います");
@@ -26,7 +26,7 @@ async function init() {
   document.getElementById("auth").style.display = "none";
   document.getElementById("app").style.display = "flex";
 
-  const savedName = localStorage.getItem("circleNickname");
+  const savedName = localStorage.getItem("Nickname");
   if (savedName) document.getElementById("nickname").value = savedName;
 
   await loadBoards();
@@ -211,7 +211,7 @@ async function send() {
 
   if (!error) {
     contentInput.value = "";
-    localStorage.setItem("circleNickname", nickname);
+    localStorage.setItem("Nickname", nickname);
   }
   btn.disabled = false;
 }

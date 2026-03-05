@@ -46,6 +46,7 @@ body {
   border: 1px solid var(--border);
   background: var(--white);
   font-size: 0.8rem;
+  color: var(--main-purple);
   font-weight: bold;
   cursor: pointer;
   transition: 0.2s;
