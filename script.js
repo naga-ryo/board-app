@@ -7,10 +7,10 @@ let pass = localStorage.getItem("Pass");
 let currentBoardId = null;
 let currentChannel = null;
 let boardsChannel = null;
+let pendingLikeMsgId = null; // いいね対象のメッセージIDを保持
 
 if (pass) init();
 
-// テキストエリアの自動リサイズを設定
 function setupTextareaAutoResize() {
   const textarea = document.getElementById("content");
   textarea.addEventListener("input", function() {
@@ -32,15 +32,13 @@ async function login() {
     errorMsg.style.display = "none";
     init();
   } else {
-    // エラー時のシェイクアニメーションと赤文字表示
     errorMsg.style.display = "block";
     authCard.classList.remove("shake");
-    void authCard.offsetWidth; // アニメーションのリセット用ハック
+    void authCard.offsetWidth; 
     authCard.classList.add("shake");
   }
 }
 
-// Enterキーでのログインをサポート
 document.getElementById("passInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") login();
 });
@@ -53,13 +51,11 @@ async function init() {
   if (savedName) document.getElementById("nickname").value = savedName;
 
   setupTextareaAutoResize();
-
   await loadBoards();
 
-  // ショートカット送信
   document.getElementById("content").addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      e.preventDefault(); // 改行を防ぐ
+      e.preventDefault();
       send();
     }
   });
@@ -68,20 +64,12 @@ async function init() {
 }
 
 function setupBoardsRealtime() {
-  if (boardsChannel) {
-    client.removeChannel(boardsChannel);
-  }
-
+  if (boardsChannel) client.removeChannel(boardsChannel);
   boardsChannel = client
     .channel("boards-realtime")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "boards" },
-      payload => {
-        loadBoards();
-      }
-    )
-    .subscribe();
+    .on("postgres_changes", { event: "*", schema: "public", table: "boards" }, payload => {
+      loadBoards();
+    }).subscribe();
 }
 
 async function loadBoards() {
@@ -114,23 +102,25 @@ function selectBoard(id, title) {
 
   loadMessages();
 
-  if (currentChannel) {
-    client.removeChannel(currentChannel);
-  }
+  if (currentChannel) client.removeChannel(currentChannel);
 
+  // INSERTだけでなく、いいね更新(UPDATE)も受け取るように event: "*" に変更
   currentChannel = client
     .channel("messages-" + id)
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "messages", filter: `board_id=eq.${id}` },
+      { event: "*", schema: "public", table: "messages", filter: `board_id=eq.${id}` },
       payload => {
-        appendRealtimeMessage(payload.new);
+        if (payload.eventType === 'INSERT') {
+          appendRealtimeMessage(payload.new);
+        } else if (payload.eventType === 'UPDATE') {
+          updateMessageUI(payload.new);
+        }
       }
     )
     .subscribe();
 }
 
-// 時刻フォーマット関数（使い回し用）
 function formatJSTDate(dateStr) {
   const date = new Date(dateStr);
   date.setHours(date.getHours() + 9);
@@ -142,10 +132,9 @@ function formatJSTDate(dateStr) {
   return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
+// リアルタイムでの新規メッセージ追加
 function appendRealtimeMessage(m) {
   const div = document.getElementById("messages");
-  
-  // 空状態の表示があれば消す
   const emptyState = div.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
 
@@ -153,6 +142,7 @@ function appendRealtimeMessage(m) {
   msgDiv.className = "message";
   const timeStr = formatJSTDate(m.created_at);
 
+  // いいねボタンを含めたHTML
   msgDiv.innerHTML = `
     <div class="message-meta">
       <b>${escapeHtml(m.nickname)}</b>
@@ -160,12 +150,28 @@ function appendRealtimeMessage(m) {
     </div>
     <div class="message-bubble">
       <div class="message-text">${escapeHtml(m.content)}</div>
+      <div class="message-footer">
+        <button class="like-btn" onclick="promptLike('${m.id}')">
+          ❤️ <span id="like-count-${m.id}">${m.likes || 0}</span>
+        </button>
+      </div>
     </div>
   `;
 
   div.appendChild(msgDiv);
-  // スムーズスクロールで一番下へ
   div.scrollTo({ top: div.scrollHeight, behavior: 'smooth' });
+}
+
+// リアルタイムでのいいね数のUI更新
+function updateMessageUI(m) {
+  const countSpan = document.getElementById(`like-count-${m.id}`);
+  if (countSpan) {
+    countSpan.textContent = m.likes || 0;
+    // 更新時にボタンをポンッと跳ねさせる
+    const btn = countSpan.parentElement;
+    btn.classList.add('liked-anim');
+    setTimeout(() => btn.classList.remove('liked-anim'), 300);
+  }
 }
 
 async function loadMessages() {
@@ -184,8 +190,6 @@ async function loadMessages() {
   }
 
   div.innerHTML = "";
-  
-  // メッセージが0件の場合の専用UI
   if (data.length === 0) {
     div.innerHTML = `
       <div class="empty-state">
@@ -208,12 +212,16 @@ async function loadMessages() {
       </div>
       <div class="message-bubble">
         <div class="message-text">${escapeHtml(m.content)}</div>
+        <div class="message-footer">
+          <button class="like-btn" onclick="promptLike('${m.id}')">
+            ❤️ <span id="like-count-${m.id}">${m.likes || 0}</span>
+          </button>
+        </div>
       </div>
     `;
     div.appendChild(msgDiv);
   });
   
-  // 初期ロード時はアニメーションなしで即座に一番下へ
   div.scrollTop = div.scrollHeight;
 }
 
@@ -236,12 +244,11 @@ async function send() {
 
   if (!error) {
     contentInput.value = "";
-    // 送信完了時にテキストエリアの高さをリセット
     contentInput.style.height = "auto";
     localStorage.setItem("Nickname", nickname);
   }
   btn.disabled = false;
-  contentInput.focus(); // 送信後もフォーカスを維持して連続投稿しやすくする
+  contentInput.focus();
 }
 
 function toggleBoardForm() {
@@ -249,13 +256,9 @@ function toggleBoardForm() {
   const btn = document.getElementById("addBoardToggle");
   const isShow = f.style.display === "block";
   f.style.display = isShow ? "none" : "block";
-  // ボタンのアニメーション効果
   btn.style.transform = isShow ? "rotate(0deg)" : "rotate(45deg)";
   btn.textContent = "+";
-  
-  if (!isShow) {
-    document.getElementById("newBoardTitle").focus();
-  }
+  if (!isShow) document.getElementById("newBoardTitle").focus();
 }
 
 async function createNewBoard() {
@@ -276,6 +279,33 @@ async function createNewBoard() {
   }
 }
 
+/* ===== いいね機能のロジック ===== */
+function promptLike(msgId) {
+  pendingLikeMsgId = msgId;
+  document.getElementById("likeConfirmModal").style.display = "flex";
+}
+
+function closeLikeModal() {
+  pendingLikeMsgId = null;
+  document.getElementById("likeConfirmModal").style.display = "none";
+}
+
+async function executeLike() {
+  if (!pendingLikeMsgId) return;
+  const msgId = pendingLikeMsgId;
+  closeLikeModal(); // 押したらすぐモーダルを閉じる
+
+  const { error } = await client.rpc("increment_like", {
+    input_pass: pass,
+    target_msg_id: msgId
+  });
+
+  if (error) {
+    console.error(error);
+    alert("いいねの処理に失敗しました。");
+  }
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
@@ -283,18 +313,17 @@ function escapeHtml(str) {
 }
 
 function openRuleModal() {
-  const modal = document.getElementById("ruleModal");
-  modal.style.display = "flex";
+  document.getElementById("ruleModal").style.display = "flex";
 }
 
 function closeRuleModal() {
-  const modal = document.getElementById("ruleModal");
-  modal.style.display = "none";
+  document.getElementById("ruleModal").style.display = "none";
 }
 
+// モーダルの外側をクリックした時に閉じる処理をまとめる
 window.addEventListener("click", function(e) {
-  const modal = document.getElementById("ruleModal");
-  if (e.target === modal) {
-    modal.style.display = "none";
-  }
+  const ruleModal = document.getElementById("ruleModal");
+  const likeModal = document.getElementById("likeConfirmModal");
+  if (e.target === ruleModal) closeRuleModal();
+  if (e.target === likeModal) closeLikeModal();
 });

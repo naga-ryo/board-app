@@ -12,30 +12,22 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* カスタムスクロールバー (Webkitブラウザ用) */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #D0C9EA; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #A294CC; }
 
-html, body {
-  height: 100%; margin: 0; padding: 0;
-  overflow: hidden;
-}
+html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg-color);
-  color: var(--text-main);
-  height: 100dvh; 
+  background: var(--bg-color); color: var(--text-main); height: 100dvh; 
 }
 
 /* --- Header --- */
 .main-header {
-  height: var(--header-height);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border);
+  height: var(--header-height); background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   position: fixed; top: 0; width: 100%; z-index: 100;
 }
@@ -50,11 +42,10 @@ body {
 .rule-btn:hover { background: var(--main-purple); color: white; border-color: var(--main-purple); transform: translateY(-1px); }
 .rule-btn:active { transform: scale(0.95); }
 
-/* --- Rule Modal --- */
+/* --- Modals --- */
 .rule-modal {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
-  z-index: 2000; align-items: center; justify-content: center;
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center;
 }
 .rule-content {
   background: var(--white); width: 90%; max-width: 450px;
@@ -67,6 +58,13 @@ body {
 .rule-close:hover { color: var(--text-main); }
 .rule-body ol { padding-left: 18px; line-height: 1.6; font-size: 0.95rem; color: var(--text-main); }
 .rule-body li { margin-bottom: 8px; }
+
+/* Modal Buttons */
+.cancel-btn {
+  background: var(--bg-color); color: var(--text-sub); border: 1px solid var(--border);
+  padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;
+}
+.cancel-btn:hover { background: #EBE9F5; color: var(--text-main); }
 
 /* --- App Container & Layout --- */
 .app-container { padding-top: var(--header-height); height: 100%; }
@@ -113,30 +111,72 @@ body {
 .chat-top-bar { padding: 15px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--white); z-index: 10; }
 .chat-top-bar h2 { margin: 0; font-size: 1.1rem; }
 
-.message-scroller {
-  flex: 1; overflow-y: auto; padding: 20px; background: #FAFAFF; display: flex; flex-direction: column;
-}
-
-/* 空状態のデザイン */
-.empty-state {
-  margin: auto; text-align: center; color: var(--text-sub); animation: fadeIn 0.5s ease;
-}
+.message-scroller { flex: 1; overflow-y: auto; padding: 20px; background: #FAFAFF; display: flex; flex-direction: column; }
+.empty-state { margin: auto; text-align: center; color: var(--text-sub); animation: fadeIn 0.5s ease; }
 .empty-state .icon { font-size: 3rem; margin-bottom: 10px; opacity: 0.5; }
 .empty-state p { font-size: 0.95rem; line-height: 1.5; margin: 0; }
 
-.message { max-width: 85%; margin-bottom: 16px; animation: slideUpFade 0.3s ease; }
+/* Message Items */
+.message { 
+  max-width: 85%; 
+  margin-bottom: 22px; /* 下のメッセージと重ならないよう余白を確保 */
+  animation: slideUpFade 0.3s ease; 
+  position: relative;
+}
+
+/* --- バブルを相対配置の基準にする --- */
 .message-bubble {
-  background: var(--white); padding: 12px 16px; border-radius: 4px 16px 16px 16px;
-  border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  background: var(--white); 
+  width: 80%;
+  padding: 10px 16px; 
+  border-radius: 4px 16px 16px 16px;
+  border: 1px solid var(--border); 
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  position: relative; /* ボタンの配置基準 */
+  display: inline-block; /* 中身の幅に合わせる */
+  min-width: 60px;
 }
 .message-meta { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
 .message-meta b { color: var(--main-purple); font-size: 0.8rem; }
 .message-text { font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 
-/* --- Chat Controls --- */
-.chat-controls {
-  padding: 15px 20px; border-top: 1px solid var(--border); background: var(--white); flex-shrink: 0;
+/* いいねボタンのデザイン */
+.message-footer { 
+  position: absolute;
+  right: -5px;   /* 右端から少しはみ出す（おしゃれ） */
+  bottom: -12px; /* 下端に引っ掛ける */
+  margin: 0;
+  display: flex;
+  z-index: 2;
 }
+
+/* --- ボタンのデザイン調整 --- */
+.like-btn {
+  background: var(--white); /* 白背景で浮かせる */
+  border: 1px solid var(--border); 
+  border-radius: 20px; /* 丸いチップ状に */
+  padding: 2px 8px; 
+  font-size: 0.75rem; 
+  color: var(--text-sub); 
+  font-weight: bold;
+  cursor: pointer; 
+  display: inline-flex; 
+  align-items: center; 
+  gap: 4px; 
+  transition: 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 浮いている感 */
+}
+
+.like-btn:hover { 
+  background: #FFF0F5; 
+  border-color: #FFB6C1; 
+  color: #E63946; 
+  transform: scale(1.05); 
+}
+.liked-anim { animation: popHeart 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+/* --- Chat Controls --- */
+.chat-controls { padding: 15px 20px; border-top: 1px solid var(--border); background: var(--white); flex-shrink: 0; }
 
 .nick-input-group {
   display: inline-flex; align-items: center; background: var(--bg-color);
@@ -145,8 +185,7 @@ body {
 .nick-input-group:focus-within { border-color: var(--main-purple); background: white; }
 .user-icon { font-size: 0.8rem; margin-right: 6px; }
 .nick-input-group input {
-  border: none; background: none; font-size: 0.85rem; font-weight: bold;
-  color: var(--main-purple); width: 100px; outline: none;
+  border: none; background: none; font-size: 0.85rem; font-weight: bold; color: var(--main-purple); width: 100px; outline: none;
 }
 .nick-input-group input::placeholder { color: #BDBACF; font-weight: normal; }
 
@@ -154,16 +193,13 @@ body {
 textarea {
   flex: 1; background: var(--bg-color); border: 2px solid var(--border);
   border-radius: 16px; padding: 12px 14px; font-size: 0.95rem; line-height: 1.4;
-  resize: none; outline: none; transition: background 0.2s, border-color 0.2s;
-  max-height: 120px; /* 自動拡張の最大高さ */
-  overflow-y: auto;
+  resize: none; outline: none; transition: background 0.2s, border-color 0.2s; max-height: 120px; overflow-y: auto;
 }
 textarea:focus { border-color: var(--main-purple); background: white; }
 
 .icon-send-btn {
   width: 46px; height: 46px; border-radius: 14px; background: var(--main-purple); border: none; color: white;
-  display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
-  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s;
 }
 .icon-send-btn svg { width: 22px; height: 22px; fill: currentColor; transform: translateX(-1px); }
 .icon-send-btn:hover:not(:disabled) { background: var(--main-purple-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(93, 63, 211, 0.3); }
@@ -172,63 +208,35 @@ textarea:focus { border-color: var(--main-purple); background: white; }
 
 /* --- Mobile Logic --- */
 @media (max-width: 768px) {
+  body { height: 100dvh; overflow: hidden; }
   .app-layout { flex-direction: column; height: calc(100dvh - var(--header-height)); }
-
-  .sidebar { width: 100%; flex-shrink: 0; border-bottom: 1px solid var(--border); border-right: none; padding: 5px 10px; }
-  .sidebar-header { padding: 10px 5px; }
-  
-  #boardList { display: flex; flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
-  /* スマホの横スクロールバーは非表示にしてスッキリさせる */
-  #boardList::-webkit-scrollbar { display: none; } 
-  
-  .board-item { flex: 0 0 auto; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; margin-bottom: 0; }
-  .board-item:hover { transform: none; }
-
-  .chat-view { flex: 1; min-height: 0; }
-  .chat-top-bar { padding: 12px 15px; }
-  .message-scroller { padding: 15px; }
-  .message { max-width: 90%; }
-  .chat-controls { padding: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .sidebar { width: 100%; flex-shrink: 0; border-bottom: 1px solid var(--border); background: var(--white); padding: 8px 10px; }
+  #boardList { display: flex; flex-direction: row; align-items: center; gap: 8px; overflow-x: auto; overflow-y: hidden; width: 100%; -webkit-overflow-scrolling: touch; }
+  #boardList::-webkit-scrollbar { display: none; }
+  .board-item { flex: 0 0 auto; min-width: 100px; padding: 8px 14px; border-radius: 20px; white-space: nowrap; margin-bottom: 0; text-align: center;}
+  #newBoardForm { flex: 0 0 auto; display: none; gap: 6px; align-items: center; }
+  #newBoardForm input { min-width: 120px; flex: 0 0 auto; }
+  .chat-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .message-scroller { flex: 1; overflow-y: auto; min-height: 0; padding: 15px; }
+  .chat-controls { flex-shrink: 0; padding: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 }
 
 /* --- Animations --- */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUpFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* シェイクアニメーション (パスワードエラー時) */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
-}
+@keyframes popHeart { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
 .shake { animation: shake 0.4s ease-in-out; }
 
 /* Auth */
-.auth-overlay {
-  position: fixed; inset: 0; background: var(--bg-color);
-  display: flex; align-items: center; justify-content: center; z-index: 1000;
-}
-.auth-card {
-  background: white; padding: 40px; border-radius: 24px; width: 85%; max-width: 360px;
-  text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.06); transition: transform 0.2s;
-}
+.auth-overlay { position: fixed; inset: 0; background: var(--bg-color); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.auth-card { background: white; padding: 40px; border-radius: 24px; width: 85%; max-width: 360px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.06); transition: transform 0.2s; }
 .auth-card h2 { color: var(--main-purple); margin: 0 0 10px; font-size: 1.6rem; }
 .auth-card p { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; }
-.auth-card input {
-  width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px;
-  font-size: 1.1rem; margin-bottom: 10px; text-align: center; outline: none; transition: 0.2s;
-}
+.auth-card input { width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px; font-size: 1.1rem; margin-bottom: 10px; text-align: center; outline: none; transition: 0.2s; }
 .auth-card input:focus { border-color: var(--main-purple); }
-
-.auth-error-msg {
-  color: #E63946 !important; font-size: 0.8rem !important; margin: 0 0 15px 0 !important;
-  display: none; /* 初期は非表示 */
-}
-
-.primary-btn {
-  width: 100%; padding: 14px; background: var(--main-purple); color: white;
-  border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s;
-}
+.auth-error-msg { color: #E63946 !important; font-size: 0.8rem !important; margin: 0 0 15px 0 !important; display: none; }
+.primary-btn { width: 100%; padding: 14px; background: var(--main-purple); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; }
 .primary-btn:hover { background: var(--main-purple-hover); }
 .primary-btn:active { transform: scale(0.96); }
