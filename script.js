@@ -7,7 +7,7 @@ let pass = localStorage.getItem("Pass");
 let currentBoardId = null;
 let currentChannel = null;
 let boardsChannel = null;
-let pendingLikeMsgId = null; // いいね対象のメッセージIDを保持
+let pendingLikeMsgId = null;
 
 if (pass) init();
 
@@ -18,6 +18,37 @@ function setupTextareaAutoResize() {
     this.style.height = (this.scrollHeight) + "px";
   });
 }
+
+// ボードの横スクロールのヒント（矢印）を制御する関数
+function updateScrollHint() {
+  const list = document.getElementById("boardList");
+  const arrow = document.getElementById("scrollHintArrow");
+  const arrow2 = document.getElementById("scrollHintArrow2");
+  if(!list || !arrow || !arrow2) return;
+  
+  // スマホサイズで、かつスクロール可能な長さがある場合のみ
+  if (window.innerWidth <= 768 && list.scrollWidth > list.clientWidth) {
+    // 右端までスクロールしきったら矢印を消す
+    if (list.scrollLeft <= 5) {
+      arrow.style.opacity = '0';
+    } else {
+      arrow.style.opacity = '1';
+    }
+    if (list.scrollLeft + list.clientWidth >= list.scrollWidth - 5) {
+      arrow2.style.opacity = '0';
+    } else {
+      arrow2.style.opacity = '1';
+    }
+  } else {
+    // PCやボード数が少ない場合は隠す
+    arrow.style.opacity = '0';
+    arrow2.style.opacity = '0';
+  }
+}
+
+// スクロール時と画面リサイズ時にヒントを更新
+document.getElementById("boardList").addEventListener("scroll", updateScrollHint);
+window.addEventListener("resize", updateScrollHint);
 
 async function login() {
   const input = document.getElementById("passInput");
@@ -90,6 +121,9 @@ async function loadBoards() {
   if (!currentBoardId && data.length > 0) {
     selectBoard(data[0].id, data[0].title);
   }
+
+  // ボードを読み込み終わった後にスクロールヒントを判定
+  setTimeout(updateScrollHint, 100);
 }
 
 function selectBoard(id, title) {
@@ -104,7 +138,6 @@ function selectBoard(id, title) {
 
   if (currentChannel) client.removeChannel(currentChannel);
 
-  // INSERTだけでなく、いいね更新(UPDATE)も受け取るように event: "*" に変更
   currentChannel = client
     .channel("messages-" + id)
     .on(
@@ -132,7 +165,6 @@ function formatJSTDate(dateStr) {
   return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
-// リアルタイムでの新規メッセージ追加
 function appendRealtimeMessage(m) {
   const div = document.getElementById("messages");
   const emptyState = div.querySelector('.empty-state');
@@ -142,7 +174,6 @@ function appendRealtimeMessage(m) {
   msgDiv.className = "message";
   const timeStr = formatJSTDate(m.created_at);
 
-  // いいねボタンを含めたHTML
   msgDiv.innerHTML = `
     <div class="message-meta">
       <b>${escapeHtml(m.nickname)}</b>
@@ -162,12 +193,10 @@ function appendRealtimeMessage(m) {
   div.scrollTo({ top: div.scrollHeight, behavior: 'smooth' });
 }
 
-// リアルタイムでのいいね数のUI更新
 function updateMessageUI(m) {
   const countSpan = document.getElementById(`like-count-${m.id}`);
   if (countSpan) {
     countSpan.textContent = m.likes || 0;
-    // 更新時にボタンをポンッと跳ねさせる
     const btn = countSpan.parentElement;
     btn.classList.add('liked-anim');
     setTimeout(() => btn.classList.remove('liked-anim'), 300);
@@ -279,7 +308,6 @@ async function createNewBoard() {
   }
 }
 
-/* ===== いいね機能のロジック ===== */
 function promptLike(msgId) {
   pendingLikeMsgId = msgId;
   document.getElementById("likeConfirmModal").style.display = "flex";
@@ -293,7 +321,7 @@ function closeLikeModal() {
 async function executeLike() {
   if (!pendingLikeMsgId) return;
   const msgId = pendingLikeMsgId;
-  closeLikeModal(); // 押したらすぐモーダルを閉じる
+  closeLikeModal();
 
   const { error } = await client.rpc("increment_like", {
     input_pass: pass,
@@ -320,7 +348,6 @@ function closeRuleModal() {
   document.getElementById("ruleModal").style.display = "none";
 }
 
-// モーダルの外側をクリックした時に閉じる処理をまとめる
 window.addEventListener("click", function(e) {
   const ruleModal = document.getElementById("ruleModal");
   const likeModal = document.getElementById("likeConfirmModal");

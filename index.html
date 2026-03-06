@@ -54,7 +54,12 @@
           <button onclick="createNewBoard()" class="create-confirm-btn">作成</button>
         </div>
       </div>
-      <nav id="boardList" class="board-nav"></nav>
+      
+      <div class="board-list-wrapper">
+        <div class="scroll-hint-arrow" id="scrollHintArrow">❮</div>
+        <nav id="boardList" class="board-nav"></nav>
+        <div class="scroll-hint-arrow" id="scrollHintArrow2">❯</div>
+      </div>
     </aside>
 
     <section class="chat-view">
