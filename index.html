@@ -50,15 +50,15 @@
       </div>
       <div id="newBoardForm" class="board-create-box">
         <div class="form-row">
-          <input id="newBoardTitle" placeholder="ボード名を入力...">
+          <input id="newBoardTitle" placeholder="ボード名 (15文字以内)" maxlength="15">
           <button onclick="createNewBoard()" class="create-confirm-btn">作成</button>
         </div>
       </div>
       
       <div class="board-list-wrapper">
-        <div class="scroll-hint-arrow" id="scrollHintArrow">❮</div>
+        <div class="scroll-hint-arrow left-arrow" id="scrollHintArrow">❮</div>
         <nav id="boardList" class="board-nav"></nav>
-        <div class="scroll-hint-arrow" id="scrollHintArrow2">❯</div>
+        <div class="scroll-hint-arrow right-arrow" id="scrollHintArrow2">❯</div>
       </div>
     </aside>
 
@@ -79,7 +79,7 @@
           </div>
         </div>
         <div class="text-input-group">
-          <textarea id="content" placeholder="メッセージを入力..." rows="1"></textarea>
+          <textarea id="content" placeholder="メッセージを入力... (100文字以内)" rows="1" maxlength="100"></textarea>
           <button onclick="send()" id="sendBtn" class="icon-send-btn">
             <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
           </button>
@@ -97,12 +97,11 @@
     </div>
     <div class="rule-body">
       <ol>
-        <li>誹謗中傷は禁止です。</li>
-        <li>個人情報の投稿は禁止です。</li>
-        <li>宣伝・勧誘行為は禁止です。</li>
-        <li>荒らし行為は禁止です。</li>
-        <li>運営の判断で投稿を削除する場合があります。</li>
-        <li>楽しく、節度を持って利用してください。</li>
+        <li><strong>⚠️ プライバシーに注意</strong><br>個人情報（本名、住所、連絡先など）の投稿は禁止です。</li>
+        <li><strong>📏 投稿の制限</strong><br>ボード名/ニックネームは15文字以内、メッセージは100文字以内で入力してください。</li>
+        <li><strong>🤝 健全な掲示板に</strong><br>誹謗中傷や荒らし行為は厳禁です。</li>
+        <li><strong>⚖️ 管理について</strong><br>管理者が不適切な投稿やボードを削除する場合があります。</li>
+        <li><strong>✨ 楽しく利用しましょう</strong><br>節度を持って楽しく使いましょう。</li>
       </ol>
     </div>
   </div>

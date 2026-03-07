@@ -22,25 +22,26 @@ function setupTextareaAutoResize() {
 // ボードの横スクロールのヒント（矢印）を制御する関数
 function updateScrollHint() {
   const list = document.getElementById("boardList");
-  const arrow = document.getElementById("scrollHintArrow");
-  const arrow2 = document.getElementById("scrollHintArrow2");
+  const arrow = document.getElementById("scrollHintArrow"); // 左矢印
+  const arrow2 = document.getElementById("scrollHintArrow2"); // 右矢印
   if(!list || !arrow || !arrow2) return;
   
   // スマホサイズで、かつスクロール可能な長さがある場合のみ
   if (window.innerWidth <= 768 && list.scrollWidth > list.clientWidth) {
-    // 右端までスクロールしきったら矢印を消す
+    // 左端までスクロールしきったら左矢印を消す
     if (list.scrollLeft <= 5) {
       arrow.style.opacity = '0';
     } else {
       arrow.style.opacity = '1';
     }
+    // 右端までスクロールしきったら右矢印を消す
     if (list.scrollLeft + list.clientWidth >= list.scrollWidth - 5) {
       arrow2.style.opacity = '0';
     } else {
       arrow2.style.opacity = '1';
     }
   } else {
-    // PCやボード数が少ない場合は隠す
+    // PCやボード数が少ない場合は両方隠す
     arrow.style.opacity = '0';
     arrow2.style.opacity = '0';
   }
@@ -133,6 +134,12 @@ function selectBoard(id, title) {
   document.querySelectorAll('.board-item').forEach(el => {
     el.classList.toggle('active', el.textContent === title);
   });
+
+  // スマホの場合、選択したボードへ自動でスライドスクロールさせるUX改善
+  const activeEl = document.querySelector('.board-item.active');
+  if (activeEl && window.innerWidth <= 768) {
+    activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
 
   loadMessages();
 
@@ -260,6 +267,12 @@ async function send() {
   const content = contentInput.value.trim();
   
   if (!content || !currentBoardId) return;
+  
+  // フロントエンド側での文字数チェック (フェイルセーフ)
+  if (content.length > 100) {
+    alert("メッセージは100文字以内で入力してください。");
+    return;
+  }
 
   const btn = document.getElementById("sendBtn");
   btn.disabled = true;
@@ -275,6 +288,8 @@ async function send() {
     contentInput.value = "";
     contentInput.style.height = "auto";
     localStorage.setItem("Nickname", nickname);
+  } else {
+    alert("送信に失敗しました。");
   }
   btn.disabled = false;
   contentInput.focus();
@@ -295,6 +310,12 @@ async function createNewBoard() {
   const title = input.value.trim();
   if (!title) return;
 
+  // フロントエンド側での文字数チェック
+  if (title.length > 15) {
+    alert("ボード名は15文字以内で入力してください。");
+    return;
+  }
+
   const { data, error } = await client.rpc("create_board", {
     input_pass: pass,
     input_title: title
@@ -305,6 +326,8 @@ async function createNewBoard() {
     toggleBoardForm();
     await loadBoards();
     selectBoard(data, title);
+  } else {
+    alert("作成に失敗しました。");
   }
 }
 
@@ -348,9 +371,17 @@ function closeRuleModal() {
   document.getElementById("ruleModal").style.display = "none";
 }
 
+// 画面外クリック、および Escキーでのモーダル閉鎖機能
 window.addEventListener("click", function(e) {
   const ruleModal = document.getElementById("ruleModal");
   const likeModal = document.getElementById("likeConfirmModal");
   if (e.target === ruleModal) closeRuleModal();
   if (e.target === likeModal) closeLikeModal();
+});
+
+window.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    closeRuleModal();
+    closeLikeModal();
+  }
 });
